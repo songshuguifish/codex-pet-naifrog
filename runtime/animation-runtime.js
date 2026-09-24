@@ -37,6 +37,7 @@ function nfPetRenderer(props) {
   const previousRequested = __NF_REACT__.useRef(null);
   const [dragActive,setDragActive] = __NF_REACT__.useState(false);
   const action = dragActive ? '$drag' : respondToHover && hovered ? "waving" : input.pending.length ? "$question" : state;
+  __NF_REACT__.useEffect(()=>{nfDiag('requested-animation',{petId:source.petId,appState:state,action,pending:input.pending,sequence:input.sequence,hovered,dragActive,reducedMotion},'renderer:'+source.petId);},[state,action,input,hovered,dragActive,reducedMotion]);
   __NF_REACT__.useEffect(() => {
     if (!spec.drag) return;
     const release = event => {
@@ -93,6 +94,7 @@ function nfPetRenderer(props) {
       const frame = dragged || transitionFrame || thinking || (!spec.disableLook && lookFrame
         ? {row: lookFrame.rowIndex, column: lookFrame.columnIndex, stateKey: "look"}
         : nfFrameAt(spec, action, reducedMotion ? 0 : elapsed));
+      nfDiag('displayed-animation',{petId:source.petId,requested:action,displayed:frame.stateKey,reason:dragged?'drag':transitionFrame?'laugh':thinking?'thinking-release':'requested'},'display:'+source.petId);
       const position = nfPosition(frame, spec);
       const frameId = `${frame.stateKey}:${frame.row}:${frame.column}`;
       const sourceCut = !reducedMotion && frame.transitionMs && frameId !== lastFrame;

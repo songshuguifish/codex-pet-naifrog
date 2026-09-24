@@ -1,0 +1,6 @@
+{
+  "function GXr(e){": "function GXr(e){globalThis.nfBlockingUse(e);",
+  "A=e=>{rke(u,m,{conversationId:n,draft:e,requestId:o.requestId})}": "A=e=>{globalThis.nfBlockingEvent(\"type\",{hostId:a,conversationId:n,request:o});rke(u,m,{conversationId:n,draft:e,requestId:o.requestId})}",
+  "S=e=>{_Le(u,m,o.requestId);let{response:t": "S=e=>{globalThis.nfBlockingEvent(\"type\",{hostId:a,conversationId:n,request:o});globalThis.nfBlockingEvent(\"close\",{hostId:a,conversationId:n,request:o});_Le(u,m,o.requestId);let{response:t",
+  "w=()=>{if(_Le(u,m,o.requestId),Ol(u,Jl,{kind:`user_input`})": "w=()=>{globalThis.nfBlockingEvent(\"close\",{hostId:a,conversationId:n,request:o});if(_Le(u,m,o.requestId),Ol(u,Jl,{kind:`user_input`})"
+}

@@ -1,12 +1,12 @@
 {
-  "version": "4.6.1",
+  "version": "4.6.2",
   "platforms": [
     "linux"
   ],
   "appVersions": [
     "26.903.61454"
   ],
-  "patchedSha256": "d3fa96178adc15ac1e8add704e9c5e9b96bcf3a89bb1993fc8872ceffb87ac15",
+  "patchedSha256": "1f7b6a65f87c69a66f38fb772f082a6969163707ed061d30ee291715a4b030ad",
   "verified": [
     "rebuild from original equals local installed latest App",
     "input bridge and question lifecycle regression tests",
@@ -14,7 +14,9 @@
     "temporary original App fresh install",
     "same-version repeat is idempotent",
     "uninstall restores original App",
-    "Python installer tests: 6 pass, 1 macOS-only test skipped"
+    "Python installer tests: 6 pass, 1 macOS-only test skipped",
+    "blocking question mount/unmount, answer-change deduplication",
+    "per-owner expiry and no relay regression"
   ],
   "macOSLatestVerified": false
 }
