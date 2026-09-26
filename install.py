@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""Offline Linux and macOS installer. Python 3.8+ standard library only."""
+"""Offline Linux installer. Python 3.8+ standard library only."""
 import argparse
 import copy
 import hashlib
 import json
 import os
 from pathlib import Path
-import plistlib
 import shutil
 import struct
 import subprocess
@@ -41,45 +40,10 @@ BUILD_SPECS = [
         'reduced_motion': 'VLe', 'classnames': 'K', 'pet_styles': 'Uer',
         'next_function': 'Yer',
     },
-    {
-        'id': 'macos-26.903.71938', 'platform': 'darwin', 'version': '26.903.71938',
-        'original': '58fef82480b9064e209b5b2fd934992e8d71515aea8084482369cfeaff1b8ee0',
-        'previous': None,
-        'patched': '46318beb84f148f0de87640dfc8d28f842780bcddf7acdedf8a02ce32eaf910a',
-        'members': {
-            '.vite/build/src-B6LqG3ek.js': '9a1d9737c526cbba0e18e5ffc3b9371ef055318e7eabb7584b082fbcdb24472e',
-            'webview/assets/app-initial-a9514281e192.js': '038d28242240bb19fd90c7a380d80c6d23caaebc77a3ebb87ff6045bc49762c6',
-        },
-        'loader_member': '.vite/build/src-B6LqG3ek.js',
-        'ui_member': 'webview/assets/app-initial-a9514281e192.js',
-        'loader_function': 'e0', 'safe_join': 't0', 'file_api': 'X', 'image_info': 'r0',
-        'sprite_rows': 'Y9n', 'renderer': 'wer', 'react': 'Ser',
-        'reduced_motion': 'BLe', 'classnames': 'K', 'pet_styles': 'ber',
-        'next_function': 'Eer',
-    },
-    {
-        'id': 'macos-26.908.31748', 'platform': 'darwin', 'version': '26.908.31748',
-        'original': 'c388f239a8e8e6af18612fad04f3b89456ea3d731e0ecaecc42ea389ddc269d6',
-        'previous': None,
-        'patched': '6dfe234bd2851ecdd43d93b2fbc1a149d8ac6e899aed05a555cd43c98a7c8e95',
-        'members': {
-            '.vite/build/src-CCXHtyvY.js': 'a42da38cbb14b28399f1d54fcf453bffc5e9802663e7e098f187c8378f4c7a40',
-            'webview/assets/app-initial-c932b6b5121b.js': '13e51e004d7cc692aed4c401621f83993b1d21b6de763aca44b4e59c1693a0d6',
-        },
-        'loader_member': '.vite/build/src-CCXHtyvY.js',
-        'ui_member': 'webview/assets/app-initial-c932b6b5121b.js',
-        'loader_function': 'p2', 'safe_join': 'm2', 'file_api': 'X', 'image_info': 'g2',
-        'sprite_rows': 'Fco', 'renderer': 'plo', 'react': 'dlo',
-        'reduced_motion': 'YJe', 'classnames': 'S', 'pet_styles': 'llo',
-        'next_function': 'hlo',
-    },
+
 ]
 
 
-# macOS adapters remain available for future porting, but latest question hooks
-# have only been verified against the Linux build.
-MACOS_ADAPTERS = [x for x in BUILD_SPECS if x['platform'] == 'darwin']
-BUILD_SPECS = [x for x in BUILD_SPECS if x['platform'] == 'linux']
 BUILD_SPECS[0]['previous'] = None
 BUILD_SPECS[0]['patched'] = '1f7b6a65f87c69a66f38fb772f082a6969163707ed061d30ee291715a4b030ad'
 BUILD_SPECS[0]['members'].update(json.loads((BUNDLE / 'runtime/extra-members.json').read_text()))
@@ -310,18 +274,10 @@ def spec_for(version, digest, platform=None):
     return None
 
 
-def mac_bundle_for_asar(app):
-    app = Path(app)
-    require(app.name == 'app.asar' and app.parent.name == 'Resources' and
-            app.parent.parent.name == 'Contents' and app.parent.parent.parent.suffix == '.app',
-            'macOS 安装源必须是 .app/Contents/Resources/app.asar。')
-    return app.parent.parent.parent
 
 
 def app_asar(path):
     path = Path(path).expanduser()
-    if path.is_dir() and path.suffix == '.app':
-        return (path / 'Contents/Resources/app.asar').resolve()
     return path.resolve()
 
 
@@ -343,9 +299,6 @@ def inspect(app, platform=None):
     }
     if spec:
         result['build'] = spec['id']
-    if key == 'darwin':
-        result['sourceBundle'] = str(mac_bundle_for_asar(app))
-        result['installMode'] = 'side-by-side'
     return result
 
 
@@ -354,26 +307,8 @@ def discover(explicit, platform=None):
     if explicit:
         path = app_asar(explicit)
         require(path.is_file(), '找不到指定的 app.asar：' + str(path))
-        if key == 'darwin':
-            mac_bundle_for_asar(path)
         return path
-    if key == 'darwin':
-        bundles = [Path('/Applications/ChatGPT.app'), Path('/Applications/Codex.app'),
-                   Path.home() / 'Applications/ChatGPT.app', Path.home() / 'Applications/Codex.app']
-        supported = []
-        for bundle in bundles:
-            path = bundle / 'Contents/Resources/app.asar'
-            if path.is_file():
-                try:
-                    report = inspect(path, key)
-                    if report['supported'] and not report['alreadyPatched']:
-                        supported.append((tuple(int(x) for x in report['version'].split('.')), path.resolve()))
-                except (InstallError, OSError, ValueError, json.JSONDecodeError):
-                    pass
-        require(bool(supported),
-                '未找到受支持的 ChatGPT/Codex App。请加 --app "/Applications/ChatGPT.app" 指定。')
-        return sorted(supported, key=lambda item: item[0], reverse=True)[0][1]
-    require(key == 'linux', '本安装器仅支持 Linux 和 macOS。')
+    require(key == 'linux', '仅支持 Linux；macOS 和 Windows 暂不支持，请自行适配并提交 PR。')
     candidates = [Path(path) for path in [
         '/usr/lib/chatgpt/resources/app.asar', '/opt/Codex/resources/app.asar',
         '/opt/codex/resources/app.asar', '/usr/lib/codex/resources/app.asar']]
@@ -521,180 +456,16 @@ def install_linux(app, home):
     return record
 
 
-def clone_app(source, destination):
-    require(not destination.exists(), '暂存 App 路径已存在：' + str(destination))
-    ditto = Path('/usr/bin/ditto')
-    if ditto.is_file():
-        subprocess.run([str(ditto), '--rsrc', '--extattr', str(source), str(destination)], check=True)
-    else:
-        shutil.copytree(source, destination, symlinks=True, copy_function=shutil.copy2)
 
 
-def update_mac_integrity(bundle, display_name=None):
-    plist_path = bundle / 'Contents/Info.plist'
-    require(plist_path.is_file() and not plist_path.is_symlink(), 'App 缺少有效的 Info.plist。')
-    with plist_path.open('rb') as stream:
-        plist = plistlib.load(stream)
-    integrity = plist.get('ElectronAsarIntegrity')
-    require(isinstance(integrity, dict) and isinstance(integrity.get('Resources/app.asar'), dict),
-            'App 缺少 Electron ASAR 完整性配置。')
-    app = bundle / 'Contents/Resources/app.asar'
-    integrity['Resources/app.asar']['hash'] = asar_header_sha(app)
-    if display_name:
-        plist['CFBundleDisplayName'] = display_name
-    stage = plist_path.with_name('Info.plist.naifrog-stage')
-    with stage.open('wb') as stream:
-        plistlib.dump(plist, stream, fmt=plistlib.FMT_XML, sort_keys=False)
-    os.replace(stage, plist_path)
-    return integrity['Resources/app.asar']['hash']
 
 
-def sign_mac_bundle(bundle):
-    codesign = Path('/usr/bin/codesign')
-    require(codesign.is_file(), '系统缺少 codesign，无法安全生成 macOS App。')
-    subprocess.run([str(codesign), '--force', '--deep', '--sign', '-',
-                    '--preserve-metadata=identifier,entitlements,flags,runtime', str(bundle)], check=True)
-    subprocess.run([str(codesign), '--verify', '--deep', '--strict', str(bundle)], check=True)
 
 
-def verify_mac_bundle(bundle, expected_asar, expected_integrity=None, verify_signature=True):
-    require(bundle.is_dir() and not bundle.is_symlink(),
-            '奶蛙 App 不存在或不是普通目录：' + str(bundle))
-    app = bundle / 'Contents/Resources/app.asar'
-    require(app.is_file() and sha(app) == expected_asar, '奶蛙 App 的播放器已改变。')
-    plist_path = bundle / 'Contents/Info.plist'
-    with plist_path.open('rb') as stream:
-        plist = plistlib.load(stream)
-    actual = plist.get('ElectronAsarIntegrity', {}).get('Resources/app.asar', {}).get('hash')
-    required = expected_integrity or asar_header_sha(app)
-    require(actual == required == asar_header_sha(app), '奶蛙 App 的 ASAR 完整性记录不匹配。')
-    if verify_signature:
-        result = subprocess.run(['/usr/bin/codesign', '--verify', '--deep', '--strict', str(bundle)],
-                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        require(result.returncode == 0, '奶蛙 App 的签名已改变：' + result.stderr.strip())
-    return True
 
 
-def mac_target_path(source_bundle, explicit=None):
-    if explicit:
-        target = Path(explicit).expanduser().absolute()
-    else:
-        target = (Path.home() / 'Applications' /
-                  (source_bundle.stem + ' Naifrog.app')).absolute()
-    require(target.suffix == '.app', '--target-app 必须以 .app 结尾。')
-    require(target != source_bundle.absolute(), '目标不能覆盖官方 App；请选择另一个 --target-app。')
-    return target
 
 
-def install_macos(app, home, target_app=None):
-    info = inspect(app, 'darwin')
-    require(info['supported'] and not info['alreadyPatched'],
-            '不支持这个 macOS 构建；没有修改 App 或宠物。受支持版本：' +
-            ', '.join(info['supportedVersions']) + '（还需代码指纹匹配）。')
-    spec = next(item for item in BUILD_SPECS if item['id'] == info['build'])
-    source_bundle = mac_bundle_for_asar(app)
-    target = mac_target_path(source_bundle, target_app)
-    pet, desired, original_pet, had_pet = prepare_pet(home)
-    state_root = home / 'naifrog-installer'
-    state_file = state_root / 'installed.json'
-    prior_state = None
-    if state_file.exists():
-        previous = json.loads(state_file.read_text(encoding='utf-8'))
-        require(previous.get('status') in ['installed', 'uninstalled'],
-                '上次安装未结束，请按记录恢复：' + str(state_file))
-        if previous['status'] == 'installed':
-            require(previous.get('mode') == 'macos-side-by-side' and
-                    previous.get('targetBundle') == str(target) and previous.get('pet') == str(pet),
-                    '上次安装使用了其他 App 或宠物路径；请先卸载该次安装。')
-            verify_mac_bundle(target, previous['installedAppSha256'],
-                              previous['installedAsarIntegrity'])
-            require(tree_hashes(pet) == desired,
-                    '安装后的宠物已改变；请保留现状并检查 installed.json。')
-            print('已安装同一版奶蛙 v4.6.2，无需重复操作。')
-            return previous
-        prior_state = previous.get('previousInstallation')
-    require(not target.exists(), '目标 App 已存在；为避免覆盖，请先移走它或更换 --target-app：' + str(target))
-    require(not target.is_symlink(), '目标 App 不能是符号链接。')
-    target.parent.mkdir(parents=True, exist_ok=True)
-    state_root.mkdir(parents=True, exist_ok=True)
-    backup = state_root / ('backup-' + time.strftime('%Y%m%d-%H%M%S') + '-' + uuid.uuid4().hex[:8])
-    backup.mkdir()
-    if had_pet:
-        shutil.copytree(pet, backup / 'pet')
-        require(tree_hashes(backup / 'pet') == original_pet, '宠物备份校验失败。')
-    pet.parent.mkdir(parents=True, exist_ok=True)
-    pet_stage = pet.with_name('naifrog-stage-' + uuid.uuid4().hex)
-    displaced = pet.with_name('naifrog-previous-' + uuid.uuid4().hex)
-    app_stage = target.with_name('.' + target.name + '.naifrog-' + uuid.uuid4().hex + '.stage')
-    display_name = source_bundle.stem + ' 奶蛙'
-    record = {
-        'status': 'prepared', 'mode': 'macos-side-by-side', 'revision': 'v4.6.2',
-        'build': spec['id'], 'sourceBundle': str(source_bundle), 'targetBundle': str(target),
-        'app': str(target / 'Contents/Resources/app.asar'), 'pet': str(pet), 'backup': str(backup),
-        'beforeAppSha256': info['sha256'], 'installedAppSha256': spec['patched'],
-        'hadPet': had_pet, 'beforePetFiles': original_pet, 'installedPetFiles': desired,
-        'restartRequired': True,
-    }
-    if prior_state:
-        record['previousInstallation'] = prior_state
-    app_installed = False
-    pet_changed = False
-    write_json(state_file, record)
-    try:
-        shutil.copytree(BUNDLE / 'pet', pet_stage)
-        require(tree_hashes(pet_stage) == desired, '宠物暂存校验失败。')
-        print('正在生成独立的 macOS 奶蛙 App（官方 App 保持不变）…', flush=True)
-        clone_app(source_bundle, app_stage)
-        staged_asar = app_stage / 'Contents/Resources/app.asar'
-        with tempfile.NamedTemporaryFile(prefix='naifrog-', suffix='.asar',
-                                         dir=str(staged_asar.parent), delete=False) as stream:
-            patched = Path(stream.name)
-        try:
-            build_archive(staged_asar, patched, spec)
-            os.chmod(patched, staged_asar.stat().st_mode & 0o777)
-            os.replace(patched, staged_asar)
-        finally:
-            if patched.exists():
-                patched.unlink()
-        integrity = update_mac_integrity(app_stage, display_name)
-        record['installedAsarIntegrity'] = integrity
-        sign_mac_bundle(app_stage)
-        verify_mac_bundle(app_stage, spec['patched'], integrity)
-        require(not target.exists(), '目标 App 在安装期间出现；拒绝覆盖：' + str(target))
-        os.replace(app_stage, target)
-        app_installed = True
-        if had_pet:
-            os.replace(pet, displaced)
-        os.replace(pet_stage, pet)
-        pet_changed = True
-        require(tree_hashes(pet) == desired, '宠物安装后校验失败。')
-        verify_mac_bundle(target, spec['patched'], integrity)
-        record['status'] = 'installed'
-        write_json(state_file, record)
-    except BaseException:
-        if pet_changed and pet.exists():
-            require(tree_hashes(pet) == desired,
-                    '回滚前发现宠物被其他程序改变，请使用备份手动恢复：' + str(backup))
-            shutil.rmtree(pet)
-        if displaced.exists():
-            os.replace(displaced, pet)
-        if app_installed and target.exists():
-            verify_mac_bundle(target, spec['patched'], record.get('installedAsarIntegrity'))
-            shutil.rmtree(target)
-        record['status'] = 'uninstalled'
-        write_json(state_file, prior_state or record)
-        raise
-    finally:
-        if pet_stage.exists():
-            shutil.rmtree(pet_stage)
-        if app_stage.exists():
-            shutil.rmtree(app_stage)
-    if displaced.exists():
-        shutil.rmtree(displaced)
-    print('安装完成：' + str(target))
-    print('官方 App 未修改：' + str(source_bundle))
-    print('请完全退出官方 App，再打开上面的“奶蛙”App，并在宠物列表选择“奶蛙”。')
-    return record
 
 
 def uninstall_linux(record, state_file, home):
@@ -738,44 +509,6 @@ def uninstall_linux(record, state_file, home):
     print('已恢复安装前的 App 和宠物。请完全退出并重新打开 Codex。备份保留。')
 
 
-def uninstall_macos(record, state_file, home):
-    target, pet, backup = [Path(record[key]) for key in ['targetBundle', 'pet', 'backup']]
-    require(pet == home / 'pets/naifrog', '安装记录与指定 Codex 目录不匹配。')
-    verify_mac_bundle(target, record['installedAppSha256'], record['installedAsarIntegrity'])
-    require(tree_hashes(pet) == record['installedPetFiles'],
-            '宠物已被修改，拒绝自动删除；备份仍在：' + str(backup))
-    if record['hadPet']:
-        require(tree_hashes(backup / 'pet') == record['beforePetFiles'], '宠物备份已损坏。')
-    stage = pet.with_name('naifrog-restore-' + uuid.uuid4().hex)
-    current = pet.with_name('naifrog-remove-' + uuid.uuid4().hex)
-    removed_app = target.with_name('.' + target.name + '.naifrog-remove-' + uuid.uuid4().hex)
-    if record['hadPet']:
-        shutil.copytree(backup / 'pet', stage)
-    os.replace(pet, current)
-    target_moved = False
-    try:
-        if record['hadPet']:
-            os.replace(stage, pet)
-        require(tree_hashes(pet) == record['beforePetFiles'], '卸载后的宠物校验失败。')
-        verify_mac_bundle(target, record['installedAppSha256'], record['installedAsarIntegrity'])
-        os.replace(target, removed_app)
-        target_moved = True
-        record['status'] = 'uninstalled'
-        write_json(state_file, record.get('previousInstallation') or record)
-    except BaseException:
-        if target_moved and removed_app.exists():
-            os.replace(removed_app, target)
-        if current.exists():
-            if pet.exists():
-                shutil.rmtree(pet)
-            os.replace(current, pet)
-        raise
-    finally:
-        if stage.exists():
-            shutil.rmtree(stage)
-    shutil.rmtree(current)
-    shutil.rmtree(removed_app)
-    print('已移除独立的奶蛙 App，并恢复安装前的宠物。官方 App 始终未被修改。备份保留。')
 
 
 def uninstall(home):
@@ -787,21 +520,18 @@ def uninstall(home):
         return
     require(record.get('status') == 'installed',
             '上次事务尚未完成，请根据记录检查备份：' + str(state_file))
-    if record.get('mode') == 'macos-side-by-side':
-        uninstall_macos(record, state_file, home)
-    else:
-        uninstall_linux(record, state_file, home)
+    require(record.get('mode', 'linux-in-place') == 'linux-in-place', '仅处理 Linux 安装记录。')
+    uninstall_linux(record, state_file, home)
 
 
 def main():
-    parser = argparse.ArgumentParser(description='奶蛙 v4.6.2 Linux / macOS 离线安装包')
+    parser = argparse.ArgumentParser(description='奶蛙 v4.6.2 Linux 离线安装包')
     parser.add_argument('command', choices=['check', 'install', 'uninstall'], nargs='?', default='check')
-    parser.add_argument('--app', help='Codex/ChatGPT .app 或 resources/app.asar 的实际路径')
-    parser.add_argument('--target-app', help='macOS 独立奶蛙 App 的目标路径（默认 ~/Applications）')
+    parser.add_argument('--app', help='Codex/ChatGPT resources/app.asar 的实际路径')
     parser.add_argument('--codex-home', default=os.environ.get('CODEX_HOME', str(Path.home() / '.codex')))
     args = parser.parse_args()
     key = platform_key()
-    require(key in ['linux', 'darwin'], '此安装包仅支持 Linux 和 macOS。')
+    require(key == 'linux', 'macOS 和 Windows 暂不支持，请自行适配并提交 PR。')
     require(os.geteuid() != 0, '请用自己的普通用户运行，不要 sudo 整个脚本。')
     home = Path(args.codex_home).expanduser().resolve()
     if args.command == 'uninstall':
@@ -811,14 +541,9 @@ def main():
     app = discover(args.app, key)
     if args.command == 'check':
         report = inspect(app, key)
-        if key == 'darwin':
-            report['suggestedTargetBundle'] = str(mac_target_path(mac_bundle_for_asar(app), args.target_app))
         print(json.dumps(report, ensure_ascii=False, indent=2))
         require(report['supported'], '这个版本尚未适配。检查没有修改任何 App 或宠物文件。')
-    elif key == 'darwin':
-        install_macos(app, home, args.target_app)
     else:
-        require(args.target_app is None, '--target-app 仅用于 macOS。')
         install_linux(app, home)
 
 

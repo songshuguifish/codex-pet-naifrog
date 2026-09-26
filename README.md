@@ -9,7 +9,8 @@
 | 平台 | 最新版状态 |
 | --- | --- |
 | Linux | 支持经过指纹校验的 Codex / ChatGPT 桌面构建 `26.903.61454` |
-| macOS | 最新问题事件逻辑尚未适配；本版安装器拒绝安装。仓库保留 macOS 副本安装、完整性更新和签名实现，供后续迁移 |
+| macOS | 暂不支持；旧适配已移除。请自行适配，并向本仓库提交 PR |
+| Windows | 暂不支持；请自行适配，并向本仓库提交 PR |
 | 其他版本、架构或分发渠道 | 未验证；版本号相同也必须匹配完整 App 和各模块的 SHA-256 |
 
 **不能把 Linux 的 `app.asar` 复制到 Mac。** 本仓库不提供修改后的完整 App；安装器从本机已验证的原始 App 构建补丁。
@@ -19,7 +20,7 @@
 需要 Python 3.8+、Git，以及受支持的原始 Linux App。安装器使用 Python 标准库。
 
 ```bash
-git clone https://github.com/smap20/codex-pet-naifrog.git
+git clone https://github.com/songshuguifish/codex-pet-naifrog.git
 cd codex-pet-naifrog
 python3 install.py check
 bash install.sh
@@ -129,3 +130,7 @@ bash uninstall.sh
 诊断版本 `2026-09-23.1` 记录问题生命周期、跨窗口来源与最终动画原因，不记录问答正文。桌面日志标记为 `[NAIFROG_DIAG]`；每个窗口内存保留最近 300 条。浏览器控制台可调用 `naifrogDiagnostics()` 查看。使用 console.error 作为此桌面构建的日志传输通道，DIAG 本身不代表异常。
 
 本版阻塞提问已通过组件生命周期模拟测试；真实桌面交互需重启后复核，不能将模拟通过视为实机通过。
+
+## 平台适配贡献
+
+macOS 和 Windows 暂不支持。请自行适配并向 https://github.com/songshuguifish/codex-pet-naifrog/pulls 提交 PR。请提供 App 版本与架构、精确构建指纹、安装／卸载恢复验证，以及等待、输入、选项点击、悬停和拖动的实机测试。不要跳过校验或提交完整 App 归档。
