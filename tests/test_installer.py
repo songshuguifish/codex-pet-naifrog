@@ -2,10 +2,10 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import plistlib
 import struct
 import tempfile
 import unittest
+import unittest.mock
 
 import install
 
@@ -57,51 +57,12 @@ class InstallerTests(unittest.TestCase):
                 self.assertIsNone(install.spec_for(spec['version'], spec['original'], other))
                 self.assertIsNone(install.spec_for(spec['version'], '0' * 64, spec['platform']))
 
-    def test_mac_integrity_update_and_verification(self):
-        with tempfile.TemporaryDirectory() as folder:
-            bundle = Path(folder) / 'ChatGPT Test.app'
-            resources = bundle / 'Contents/Resources'
-            resources.mkdir(parents=True)
-            asar = resources / 'app.asar'
-            expected = write_minimal_asar(asar)
-            plist_path = bundle / 'Contents/Info.plist'
-            with plist_path.open('wb') as stream:
-                plistlib.dump({
-                    'CFBundleDisplayName': 'ChatGPT',
-                    'ElectronAsarIntegrity': {'Resources/app.asar': {'algorithm': 'SHA256', 'hash': 'old'}},
-                }, stream)
-            actual = install.update_mac_integrity(bundle, 'ChatGPT 奶蛙')
-            self.assertEqual(actual, expected)
-            self.assertTrue(install.verify_mac_bundle(bundle, install.sha(asar), expected,
-                                                       verify_signature=False))
-            with plist_path.open('rb') as stream:
-                updated = plistlib.load(stream)
-            self.assertEqual(updated['CFBundleDisplayName'], 'ChatGPT 奶蛙')
-
-    def test_mac_bundle_paths_fail_closed(self):
-        good = Path('/Applications/ChatGPT.app/Contents/Resources/app.asar')
-        self.assertEqual(install.mac_bundle_for_asar(good), Path('/Applications/ChatGPT.app'))
-        with self.assertRaises(install.InstallError):
-            install.mac_bundle_for_asar(Path('/tmp/app.asar'))
-        with self.assertRaises(install.InstallError):
-            install.mac_target_path(Path('/Applications/ChatGPT.app'),
-                                    '/Applications/ChatGPT.app')
-
-    @unittest.skipUnless(os.environ.get('NAIFROG_TEST_MAC_APP'),
-                         'set NAIFROG_TEST_MAC_APP to exercise a real supported macOS app')
-    def test_real_mac_fixture_rebuild_is_deterministic(self):
-        source = install.app_asar(os.environ['NAIFROG_TEST_MAC_APP'])
-        report = install.inspect(source, 'darwin')
-        self.assertTrue(report['supported'])
-        self.assertFalse(report['alreadyPatched'])
-        spec = next(item for item in install.BUILD_SPECS if item['id'] == report['build'])
-        with tempfile.TemporaryDirectory() as folder:
-            first = Path(folder) / 'first.asar'
-            second = Path(folder) / 'second.asar'
-            install.build_archive(source, first, spec)
-            install.build_archive(source, second, spec)
-            self.assertEqual(install.sha(first), spec['patched'])
-            self.assertEqual(first.read_bytes(), second.read_bytes())
+    def test_only_linux_builds_are_available(self):
+        self.assertEqual({s['platform'] for s in install.BUILD_SPECS}, {'linux'})
+        for platform in ['darwin', 'win32']:
+            with self.subTest(platform=platform), unittest.mock.patch.object(install.sys, 'platform', platform), unittest.mock.patch.object(install.sys, 'argv', ['install.py', 'check']):
+                with self.assertRaisesRegex(install.InstallError, '暂不支持'):
+                    install.main()
 
 
 if __name__ == '__main__':

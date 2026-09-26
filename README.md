@@ -1,5 +1,23 @@
 # 奶蛙 Codex Pet · v4.6.2
 
+## 动画预览
+
+下列 GIF 从最新版图集中抽样导出，用于辨认动作；为减小文件体积降低了帧率。实际 App 保留原图集帧和时长，思考、拖动及提问时序由上面的状态逻辑控制。
+
+| 动作 | 预览 |
+| --- | --- |
+| 待机 | ![待机](docs/previews/idle.gif) |
+| 普通等待：聆听／托下巴 | ![普通等待](docs/previews/waiting.gif) |
+| 提问待回答：侧眼定格 | ![提问等待](docs/previews/question.png) |
+| 首次编辑答案：大笑 | ![大笑](docs/previews/jumping.gif) |
+| 悬停：摸肚子 | ![摸肚子](docs/previews/waving.gif) |
+| 思考：原始完整动作 | ![思考](docs/previews/running.gif) |
+| 拖动：原始升降动作 | ![漂浮](docs/previews/running-right.gif) |
+| 失败：眩晕 | ![眩晕](docs/previews/failed.gif) |
+| 结果待查看 | ![查看](docs/previews/review.gif) |
+
+[持续挠头时序对比视频](thinking-preview.mp4) · [完整动作候选视频](hover/hover-options.mp4)
+
 把奶蛙作为 Codex 桌面宠物：工作时持续挠头，有问题待回答时侧眼等待，首次编辑答案时大笑，鼠标悬停时摸肚子，按住拖动时浮起、松手后落下。
 
 本版包含启动打包修复、缺失图集修复、悬停入口修复、独立提问等待状态，以及历史问题导致侧眼常驻的清理修复。动画素材保留统一大小和位置。
@@ -9,7 +27,8 @@
 | 平台 | 最新版状态 |
 | --- | --- |
 | Linux | 支持经过指纹校验的 Codex / ChatGPT 桌面构建 `26.903.61454` |
-| macOS | 最新问题事件逻辑尚未适配；本版安装器拒绝安装。仓库保留 macOS 副本安装、完整性更新和签名实现，供后续迁移 |
+| macOS | 暂不支持；旧适配已移除。请自行适配，并向本仓库提交 PR |
+| Windows | 暂不支持；请自行适配，并向本仓库提交 PR |
 | 其他版本、架构或分发渠道 | 未验证；版本号相同也必须匹配完整 App 和各模块的 SHA-256 |
 
 **不能把 Linux 的 `app.asar` 复制到 Mac。** 本仓库不提供修改后的完整 App；安装器从本机已验证的原始 App 构建补丁。
@@ -19,7 +38,7 @@
 需要 Python 3.8+、Git，以及受支持的原始 Linux App。安装器使用 Python 标准库。
 
 ```bash
-git clone https://github.com/smap20/codex-pet-naifrog.git
+git clone https://github.com/songshuguifish/codex-pet-naifrog.git
 cd codex-pet-naifrog
 python3 install.py check
 bash install.sh
@@ -84,24 +103,6 @@ bash uninstall.sh
 
 开启系统减少动态效果后，部分播放与过渡会简化。宠物没有手动动作点播菜单。
 
-## 动画预览
-
-下列 GIF 从最新版图集中抽样导出，用于辨认动作；为减小文件体积降低了帧率。实际 App 保留原图集帧和时长，思考、拖动及提问时序由上面的状态逻辑控制。
-
-| 动作 | 预览 |
-| --- | --- |
-| 待机 | ![待机](docs/previews/idle.gif) |
-| 普通等待：聆听／托下巴 | ![普通等待](docs/previews/waiting.gif) |
-| 提问待回答：侧眼定格 | ![提问等待](docs/previews/question.png) |
-| 首次编辑答案：大笑 | ![大笑](docs/previews/jumping.gif) |
-| 悬停：摸肚子 | ![摸肚子](docs/previews/waving.gif) |
-| 思考：原始完整动作 | ![思考](docs/previews/running.gif) |
-| 拖动：原始升降动作 | ![漂浮](docs/previews/running-right.gif) |
-| 失败：眩晕 | ![眩晕](docs/previews/failed.gif) |
-| 结果待查看 | ![查看](docs/previews/review.gif) |
-
-[持续挠头时序对比视频](thinking-preview.mp4) · [完整动作候选视频](hover/hover-options.mp4)
-
 ## 验证与已知边界
 
 - 安装器验证包内文件、原始 App 和修改模块的 SHA-256；构建结果必须与预期哈希完全一致。
@@ -129,3 +130,7 @@ bash uninstall.sh
 诊断版本 `2026-09-23.1` 记录问题生命周期、跨窗口来源与最终动画原因，不记录问答正文。桌面日志标记为 `[NAIFROG_DIAG]`；每个窗口内存保留最近 300 条。浏览器控制台可调用 `naifrogDiagnostics()` 查看。使用 console.error 作为此桌面构建的日志传输通道，DIAG 本身不代表异常。
 
 本版阻塞提问已通过组件生命周期模拟测试；真实桌面交互需重启后复核，不能将模拟通过视为实机通过。
+
+## 平台适配贡献
+
+macOS 和 Windows 暂不支持。请自行适配并向 https://github.com/songshuguifish/codex-pet-naifrog/pulls 提交 PR。请提供 App 版本与架构、精确构建指纹、安装／卸载恢复验证，以及等待、输入、选项点击、悬停和拖动的实机测试。不要跳过校验或提交完整 App 归档。
