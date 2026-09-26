@@ -1,5 +1,23 @@
 # 奶蛙 Codex Pet · v4.6.2
 
+## 动画预览
+
+下列 GIF 从最新版图集中抽样导出，用于辨认动作；为减小文件体积降低了帧率。实际 App 保留原图集帧和时长，思考、拖动及提问时序由上面的状态逻辑控制。
+
+| 动作 | 预览 |
+| --- | --- |
+| 待机 | ![待机](docs/previews/idle.gif) |
+| 普通等待：聆听／托下巴 | ![普通等待](docs/previews/waiting.gif) |
+| 提问待回答：侧眼定格 | ![提问等待](docs/previews/question.png) |
+| 首次编辑答案：大笑 | ![大笑](docs/previews/jumping.gif) |
+| 悬停：摸肚子 | ![摸肚子](docs/previews/waving.gif) |
+| 思考：原始完整动作 | ![思考](docs/previews/running.gif) |
+| 拖动：原始升降动作 | ![漂浮](docs/previews/running-right.gif) |
+| 失败：眩晕 | ![眩晕](docs/previews/failed.gif) |
+| 结果待查看 | ![查看](docs/previews/review.gif) |
+
+[持续挠头时序对比视频](thinking-preview.mp4) · [完整动作候选视频](hover/hover-options.mp4)
+
 把奶蛙作为 Codex 桌面宠物：工作时持续挠头，有问题待回答时侧眼等待，首次编辑答案时大笑，鼠标悬停时摸肚子，按住拖动时浮起、松手后落下。
 
 本版包含启动打包修复、缺失图集修复、悬停入口修复、独立提问等待状态，以及历史问题导致侧眼常驻的清理修复。动画素材保留统一大小和位置。
@@ -84,24 +102,6 @@ bash uninstall.sh
 画面优先播放拖动，其次是已启动的大笑，再是持续思考动作的自然收尾，最后是当前请求状态。请求状态优先处理拖动和悬停，然后是待回答问题，最后是普通 App 状态。因此提问刚出现时，可能先看到挠头自然放手；提交后也不会硬切断正在播放的大笑。
 
 开启系统减少动态效果后，部分播放与过渡会简化。宠物没有手动动作点播菜单。
-
-## 动画预览
-
-下列 GIF 从最新版图集中抽样导出，用于辨认动作；为减小文件体积降低了帧率。实际 App 保留原图集帧和时长，思考、拖动及提问时序由上面的状态逻辑控制。
-
-| 动作 | 预览 |
-| --- | --- |
-| 待机 | ![待机](docs/previews/idle.gif) |
-| 普通等待：聆听／托下巴 | ![普通等待](docs/previews/waiting.gif) |
-| 提问待回答：侧眼定格 | ![提问等待](docs/previews/question.png) |
-| 首次编辑答案：大笑 | ![大笑](docs/previews/jumping.gif) |
-| 悬停：摸肚子 | ![摸肚子](docs/previews/waving.gif) |
-| 思考：原始完整动作 | ![思考](docs/previews/running.gif) |
-| 拖动：原始升降动作 | ![漂浮](docs/previews/running-right.gif) |
-| 失败：眩晕 | ![眩晕](docs/previews/failed.gif) |
-| 结果待查看 | ![查看](docs/previews/review.gif) |
-
-[持续挠头时序对比视频](thinking-preview.mp4) · [完整动作候选视频](hover/hover-options.mp4)
 
 ## 验证与已知边界
 
